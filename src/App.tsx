@@ -2000,6 +2000,7 @@ function ColorEditor({
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const color = normalizeHexColor(style.color);
   const rgb = useMemo(() => hexToRgb(color), [color]);
@@ -2007,6 +2008,16 @@ function ColorEditor({
 
   useEffect(() => {
     if (!open) return;
+
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 350 && rect.top > spaceBelow) {
+        setOpenUp(true);
+      } else {
+        setOpenUp(false);
+      }
+    }
 
     const closeOnOutsideClick = (event: PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
@@ -2093,7 +2104,7 @@ function ColorEditor({
         </div>
       )}
       {open && (
-        <div className="color-popover">
+        <div className={`color-popover ${openUp ? "open-up" : ""}`}>
           <div
             className="color-spectrum"
             style={
