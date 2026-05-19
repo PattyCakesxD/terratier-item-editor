@@ -7,7 +7,7 @@
 .topbar {
   position: sticky;
   top: 14px;
-  z-index: 30;
+  z-index: 9999;
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto auto;
   align-items: center;
@@ -1101,6 +1101,28 @@
 .advanced-grid {
   display: grid;
   gap: 14px;
+}
+
+.terratier-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.terratier-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.terratier-keys span {
+  min-height: 28px;
+  padding: 6px 9px;
+  color: var(--text-dim);
+  background: rgba(247, 246, 236, 0.04);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .advanced-group {

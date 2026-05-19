@@ -55,6 +55,8 @@ import {
   type ItemState,
   type LoreLine,
   type TextStyle,
+  terratierAttributeOptions,
+  type TerratierAttributeEntry,
 } from "./lib/craftEngine";
 import "./App.css";
 
@@ -815,6 +817,17 @@ function AdvancedSection({ state, patchState }: ViewProps) {
     }));
   };
 
+  const updateTerratierAttribute = (
+    id: string,
+    patch: Partial<TerratierAttributeEntry>,
+  ) => {
+    patchState((current) => ({
+      terratierAttributes: current.terratierAttributes.map((entry) =>
+        entry.id === id ? { ...entry, ...patch } : entry,
+      ),
+    }));
+  };
+
   return (
     <div className="advanced-view">
       <div className="export-head">
@@ -824,74 +837,59 @@ function AdvancedSection({ state, patchState }: ViewProps) {
       </div>
 
       <div className="advanced-grid">
-        <AdvancedGroup title="Identity and rules">
-          <div className="compact-grid">
-            <Field label="Namespace">
-              <TextInput
-                value={state.namespace}
-                onChange={(namespace) => patchState({ namespace })}
-              />
-            </Field>
-            <Field label="Item id">
-              <TextInput
-                value={state.itemId}
-                onChange={(itemId) => patchState({ itemId })}
-              />
-            </Field>
-            <Field label="Item model">
-              <TextInput
-                value={state.itemModel}
-                onChange={(itemModel) => patchState({ itemModel })}
-              />
-            </Field>
-            <Field label="Category">
-              <TextInput
-                value={state.category}
-                onChange={(category) => patchState({ category })}
-              />
-            </Field>
+        <AdvancedGroup title="Terratier Attributes">
+          <div className="section-tools">
+            <button
+              className="line-action"
+              type="button"
+              onClick={() =>
+                patchState((current) => ({
+                  terratierAttributes: [
+                    ...current.terratierAttributes,
+                    {
+                      id: createId("terratier"),
+                      attribute: "mining_speed",
+                      value: 1.0,
+                    },
+                  ],
+                }))
+              }
+            >
+              <ListPlus size={15} />
+              Add attribute
+            </button>
           </div>
 
-          <Field label="Tags">
-            <TagEditor
-              values={state.tags}
-              onChange={(tags) => patchState({ tags })}
-            />
-          </Field>
-
-          <Field label="Behavior">
-            <Segmented
-              value={state.behaviorType}
-              options={behaviorOptions}
-              onChange={(behaviorType) =>
-                patchState({ behaviorType: behaviorType as BehaviorType })
-              }
-            />
-          </Field>
-
-          {state.behaviorType !== "none" && (
-            <div className="compact-grid">
-              <Field label="Behavior target">
-                <TextInput
-                  value={state.behaviorBlock}
-                  placeholder="lowclicker:block_id"
-                  onChange={(behaviorBlock) => patchState({ behaviorBlock })}
+          <div className="repeater-list">
+            {state.terratierAttributes.map((entry) => (
+              <div className="repeat-row enchant-row" key={entry.id}>
+                <Select
+                  value={entry.attribute}
+                  options={terratierAttributeOptions}
+                  onChange={(attribute) =>
+                    updateTerratierAttribute(entry.id, { attribute })
+                  }
                 />
-              </Field>
-              {state.behaviorType === "range_mining_item" && (
-                <Field label="Radius">
-                  <NumberInput
-                    value={state.behaviorRadius}
-                    min={1}
-                    max={16}
-                    onChange={(behaviorRadius) =>
-                      patchState({ behaviorRadius })
-                    }
-                  />
-                </Field>
-              )}
-            </div>
-          )}
+                <NumberInput
+                  value={entry.value}
+                  step={0.1}
+                  onChange={(value) =>
+                    updateTerratierAttribute(entry.id, { value })
+                  }
+                />
+                <RemoveButton
+                  label="Remove terratier attribute"
+                  onClick={() =>
+                    patchState((current) => ({
+                      terratierAttributes: current.terratierAttributes.filter(
+                        (item) => item.id !== entry.id,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
         </AdvancedGroup>
 
         <AdvancedGroup title="Item data">

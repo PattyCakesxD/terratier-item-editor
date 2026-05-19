@@ -38,6 +38,12 @@ export type ComponentEntry = {
   value: string;
 };
 
+export type TerratierAttributeEntry = {
+  id: string;
+  attribute: string;
+  value: number;
+};
+
 export type RepairMode = "default" | "simple" | "detailed";
 export type BehaviorType =
   | "none"
@@ -141,6 +147,7 @@ export type ItemState = {
   projectileThrowSound: string;
   projectileHitEntitySound: string;
   projectileHitBlockSound: string;
+  terratierAttributes: TerratierAttributeEntry[];
   behaviorType: BehaviorType;
   behaviorBlock: string;
   behaviorRadius: number;
@@ -356,6 +363,11 @@ export const attributeOptions = [
   "water_movement_efficiency",
 ];
 
+export const terratierAttributeOptions = [
+  "mining_speed",
+  "mining_speed_multiplier",
+];
+
 export const slotOptions = [
   "any",
   "hand",
@@ -495,6 +507,7 @@ export const createInitialState = (): ItemState => ({
   projectileThrowSound: "",
   projectileHitEntitySound: "",
   projectileHitBlockSound: "",
+  terratierAttributes: [],
   behaviorType: "none",
   behaviorBlock: "",
   behaviorRadius: 3,
@@ -733,6 +746,30 @@ export const buildCraftEngineConfig = (state: ItemState) => {
       .filter((entry) => isFilled(entry.component))
       .map((entry) => [entry.component.trim(), parseYamlValue(entry.value)]),
   );
+
+  const terratierCustomData: Record<string, unknown> = {};
+  state.terratierAttributes.forEach((entry) => {
+    if (isFilled(entry.attribute)) {
+      terratierCustomData[`terratier:${entry.attribute.trim()}`] =
+        Number(entry.value) || 0;
+    }
+  });
+
+  if (Object.keys(terratierCustomData).length > 0) {
+    const existingCustomData = customComponents["minecraft:custom_data"];
+    const customData =
+      existingCustomData &&
+      typeof existingCustomData === "object" &&
+      !Array.isArray(existingCustomData)
+        ? existingCustomData
+        : {};
+
+    customComponents["minecraft:custom_data"] = compactObject({
+      ...customData,
+      ...terratierCustomData,
+    });
+  }
+
   if (Object.keys(customComponents).length > 0)
     data.components = customComponents;
 
