@@ -58,7 +58,7 @@ export type CraftRemainderMode =
 export type ItemState = {
   namespace: string;
   itemId: string;
-  magicUi: boolean,
+  magicUi: boolean;
   material: string;
   customModelData: number;
   itemModel: string;
@@ -157,43 +157,64 @@ export type MiniSegment = {
 };
 
 export function toRoman(value: number) {
-  if (!Number.isFinite(value) || value <= 0) return String(value || 1)
-  if (value > 10) return String(value)
-  return ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][value] ?? String(value)
+  if (!Number.isFinite(value) || value <= 0) return String(value || 1);
+  if (value > 10) return String(value);
+  return (
+    ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][value] ??
+    String(value)
+  );
 }
 
 export function formatMinecraftName(value: string) {
-  const minorWords = new Set(["of", "the", "and", "in"])
+  const minorWords = new Set(["of", "the", "and", "in"]);
   return value
     .replace(/^minecraft:/, "")
     .split("_")
-    .map((word, index) => index > 0 && minorWords.has(word) ? word : word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
+    .map((word, index) =>
+      index > 0 && minorWords.has(word)
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1),
+    )
+    .join(" ");
 }
 
 export function formatSlotName(value: string) {
   const slotNames: Record<string, string> = {
-    mainhand: "Main Hand", offhand: "Off Hand", head: "Head",
-    chest: "Chest", legs: "Legs", feet: "Feet", hand: "Hand",
-    armor: "Armor", body: "Body", saddle: "Saddle", any: "Any Slot",
-  }
-  return slotNames[value] ?? formatMinecraftName(value)
+    mainhand: "Main Hand",
+    offhand: "Off Hand",
+    head: "Head",
+    chest: "Chest",
+    legs: "Legs",
+    feet: "Feet",
+    hand: "Hand",
+    armor: "Armor",
+    body: "Body",
+    saddle: "Saddle",
+    any: "Any Slot",
+  };
+  return slotNames[value] ?? formatMinecraftName(value);
 }
 
 export function formatAttributeAmount(value: number, operation: string) {
-  const isPercent = operation === "add_multiplied_base" || operation === "add_multiplied_total"
-  const displayValue = isPercent ? value * 100 : value
-  const sign = displayValue > 0 ? "+" : ""
-  const formattedNumber = Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)
-  return `${sign}${formattedNumber}${isPercent ? "%" : ""}`
+  const isPercent =
+    operation === "add_multiplied_base" || operation === "add_multiplied_total";
+  const displayValue = isPercent ? value * 100 : value;
+  const sign = displayValue > 0 ? "+" : "";
+  const formattedNumber = Number.isInteger(displayValue)
+    ? displayValue
+    : displayValue.toFixed(2);
+  return `${sign}${formattedNumber}${isPercent ? "%" : ""}`;
 }
 
 export function groupAttributesBySlot(attributes: AttributeEntry[]) {
-  return attributes.reduce<Record<string, AttributeEntry[]>>((groups, attribute) => {
-    const slot = attribute.slot || "any"
-    groups[slot] = [...(groups[slot] ?? []), attribute]
-    return groups
-  }, {})
+  return attributes.reduce<Record<string, AttributeEntry[]>>(
+    (groups, attribute) => {
+      const slot = attribute.slot || "any";
+      groups[slot] = [...(groups[slot] ?? []), attribute];
+      return groups;
+    },
+    {},
+  );
 }
 
 export const minecraftColors: Record<string, string> = {
@@ -383,7 +404,7 @@ export const blankStyle = (): TextStyle => ({
 });
 
 export const createInitialState = (): ItemState => ({
-  namespace: "lowclicker", // IMPORTANT: switch this after rebrand
+  namespace: "terratier",
   itemId: "",
   magicUi: true,
   material: "paper",
@@ -578,36 +599,44 @@ export const buildCraftEngineConfig = (state: ItemState) => {
 
   const lore = state.lore
     .filter((line) => isFilled(line.text))
-    .map((line) => styleToMiniMessage(line.text.trim(), line.style))
+    .map((line) => styleToMiniMessage(line.text.trim(), line.style));
 
   if (state.magicUi) {
     if (lore.length > 0) {
-      lore.unshift('')
-    }
-    
-    const activeEnchants = state.enchantments.filter((entry) => isFilled(entry.enchantment))
-    if (activeEnchants.length > 0) {
-      if (lore.length > 0) lore.push('') // Inject spacing
-      activeEnchants.forEach((entry) => {
-        lore.push(`<!i><#aaaaff>${formatMinecraftName(entry.enchantment)} ${toRoman(entry.level)}`)
-      })
+      lore.unshift("");
     }
 
-    const activeAttributes = state.attributes.filter((entry) => isFilled(entry.type))
+    const activeEnchants = state.enchantments.filter((entry) =>
+      isFilled(entry.enchantment),
+    );
+    if (activeEnchants.length > 0) {
+      if (lore.length > 0) lore.push(""); // Inject spacing
+      activeEnchants.forEach((entry) => {
+        lore.push(
+          `<!i><#aaaaff>${formatMinecraftName(entry.enchantment)} ${toRoman(entry.level)}`,
+        );
+      });
+    }
+
+    const activeAttributes = state.attributes.filter((entry) =>
+      isFilled(entry.type),
+    );
     if (activeAttributes.length > 0) {
-      if (lore.length > 0 || activeEnchants.length > 0) lore.push('') // Inject spacing
-      const grouped = groupAttributesBySlot(activeAttributes)
+      if (lore.length > 0 || activeEnchants.length > 0) lore.push(""); // Inject spacing
+      const grouped = groupAttributesBySlot(activeAttributes);
       Object.entries(grouped).forEach(([slot, entries]) => {
-        lore.push(`<!i><#aaaaaa>When in ${formatSlotName(slot)}:`)
+        lore.push(`<!i><#aaaaaa>When in ${formatSlotName(slot)}:`);
         entries.forEach((entry) => {
-          const color = entry.amount >= 0 ? '<#5555ff>' : '<#ff5555>'
-          lore.push(`<!i>${color}${formatAttributeAmount(entry.amount, entry.operation)} ${formatMinecraftName(entry.type)}`)
-        })
-      })
+          const color = entry.amount >= 0 ? "<#5555ff>" : "<#ff5555>";
+          lore.push(
+            `<!i>${color}${formatAttributeAmount(entry.amount, entry.operation)} ${formatMinecraftName(entry.type)}`,
+          );
+        });
+      });
     }
   }
 
-  if (lore.length > 0) data.lore = lore
+  if (lore.length > 0) data.lore = lore;
 
   if (state.unbreakable) data.unbreakable = true;
 
@@ -641,12 +670,13 @@ export const buildCraftEngineConfig = (state: ItemState) => {
   if (isFilled(state.blockState))
     data.block_state = parseYamlValue(state.blockState);
 
-  const hidden = cleanList(state.hideTooltip)
+  const hidden = cleanList(state.hideTooltip);
   if (state.magicUi) {
-    if (!hidden.includes('enchantments')) hidden.push('enchantments')
-    if (!hidden.includes('attribute_modifiers')) hidden.push('attribute_modifiers')
+    if (!hidden.includes("enchantments")) hidden.push("enchantments");
+    if (!hidden.includes("attribute_modifiers"))
+      hidden.push("attribute_modifiers");
   }
-  if (hidden.length > 0) data.hide_tooltip = hidden
+  if (hidden.length > 0) data.hide_tooltip = hidden;
 
   const attributes = state.attributes
     .filter((entry) => isFilled(entry.type))
