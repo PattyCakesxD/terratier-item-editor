@@ -298,6 +298,7 @@ const legacyFormatCodes: Record<string, string> = {
 export const terratierAttributeOptions = [
   "mining_speed",
   "mining_speed_multiplier",
+  "fortune",
 ];
 
 export const slotOptions = [

@@ -215,5 +215,26 @@
     "min": 0.0,
     "max": 1.0,
     "default": 0.0
+  },
+  {
+    "name": "mining_speed",
+    "resource": "terratier:mining_speed",
+    "min": 0.0,
+    "max": 1000.0,
+    "default": 0.0
+  },
+  {
+    "name": "mining_speed_multiplier",
+    "resource": "terratier:mining_speed_multiplier",
+    "min": 0.0,
+    "max": 100.0,
+    "default": 1.0
+  },
+  {
+    "name": "fortune",
+    "resource": "terratier:fortune",
+    "min": 0.0,
+    "max": 100.0,
+    "default": 0.0
   }
 ]
