@@ -65,17 +65,6 @@ type Patch = Partial<ItemState> | ((current: ItemState) => Partial<ItemState>);
 
 const STORAGE_KEY = "craftengine-item-editor-state-v5";
 
-const behaviorOptions: Array<{ value: BehaviorType; label: string }> = [
-  { value: "none", label: "None" },
-  { value: "block_item", label: "Block" },
-  { value: "furniture_item", label: "Furniture" },
-  { value: "ground_block_item", label: "Ground" },
-  { value: "wall_block_item", label: "Wall" },
-  { value: "ceiling_block_item", label: "Ceiling" },
-  { value: "range_mining_item", label: "Range mine" },
-  { value: "compostable_item", label: "Compost" },
-];
-
 const colorPresets = [
   "#ffdf7e",
   "#ff4d38",
@@ -1891,31 +1880,6 @@ function Toggle({
       <span />
       {label}
     </button>
-  );
-}
-
-function Segmented({
-  value,
-  options,
-  onChange,
-}: {
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="segmented">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          className={value === option.value ? "active" : ""}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
   );
 }
 
