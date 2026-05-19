@@ -67,6 +67,7 @@ export type ItemState = {
   namespace: string;
   itemId: string;
   magicUi: boolean;
+  includeItemsKey: boolean;
   material: string;
   customModelData: number;
   itemModel: string;
@@ -424,6 +425,7 @@ export const createInitialState = (): ItemState => ({
   namespace: "terratier",
   itemId: "",
   magicUi: true,
+  includeItemsKey: false,
   material: "paper",
   customModelData: 0,
   itemModel: "",
@@ -908,11 +910,11 @@ export const buildCraftEngineConfig = (state: ItemState) => {
     });
   }
 
-  return {
-    items: {
-      [itemKey]: item,
-    },
+  const config = {
+    [itemKey]: item,
   };
+
+  return state.includeItemsKey ? { items: config } : config;
 };
 
 export const buildCraftEngineYaml = (state: ItemState) =>

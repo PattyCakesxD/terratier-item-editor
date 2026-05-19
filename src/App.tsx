@@ -459,6 +459,10 @@ function App() {
                 itemKey={itemKey}
                 magicUi={state.magicUi}
                 setMagicUi={(magicUi) => patchState({ magicUi })}
+                includeItemsKey={state.includeItemsKey}
+                setIncludeItemsKey={(includeItemsKey) =>
+                  patchState({ includeItemsKey })
+                } // <-- Add this
                 onCopy={copyYaml}
                 onDownload={downloadYaml}
               />
@@ -1269,6 +1273,8 @@ function ExportView({
   itemKey,
   magicUi,
   setMagicUi,
+  includeItemsKey,
+  setIncludeItemsKey,
   onCopy,
   onDownload,
 }: {
@@ -1276,6 +1282,8 @@ function ExportView({
   itemKey: string;
   magicUi: boolean;
   setMagicUi: (value: boolean) => void;
+  includeItemsKey: boolean;
+  setIncludeItemsKey: (value: boolean) => void;
   onCopy: () => void;
   onDownload: () => void;
 }) {
@@ -1319,11 +1327,19 @@ function ExportView({
       </div>
 
       <div className="export-actions-bar">
-        <Toggle
-          checked={magicUi}
-          label="Magic UI Compiler"
-          onChange={setMagicUi}
-        />
+        <div className="inline-options">
+          <Toggle
+            checked={magicUi}
+            label="Magic UI Compiler"
+            onChange={setMagicUi}
+          />
+          <Toggle
+            checked={includeItemsKey}
+            label="Include 'items:' key"
+            onChange={setIncludeItemsKey}
+          />
+        </div>
+
         <div className="export-actions">
           <button className="primary-action" type="button" onClick={onCopy}>
             <Copy size={17} />
