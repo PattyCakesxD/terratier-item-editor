@@ -592,9 +592,10 @@
   top: 0;
   left: 0;
   right: auto;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   max-height: 230px;
-  overflow: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   scroll-behavior: auto;
   background: #070806;
@@ -604,22 +605,89 @@
     inset 0 0 0 1px rgba(247, 246, 236, 0.06);
 }
 
-.select-menu::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
+.select-search-container {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 8px;
+  background: #070806;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.select-search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  color: var(--text-strong);
+  background: rgba(247, 246, 236, 0.05);
+  border: 1px solid var(--line);
+  outline: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  transition: border-color 150ms ease;
+}
+
+.select-search-input:focus {
+  border-color: var(--signal);
+}
+
+.select-no-results {
+  padding: 12px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.select-menu-items {
+  overflow: auto;
+  display: grid;
+  flex: 1;
+}
+
+.select-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.select-menu::-webkit-scrollbar-thumb {
+  background: var(--line);
 }
 
 .select-menu button {
+  position: relative;
+  isolation: isolate;
   min-height: 36px;
   padding: 0 12px;
   color: var(--text);
-  background: #070806;
+  background: transparent;
   text-align: left;
   font-size: 13px;
+  overflow: hidden;
+  transition: color 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.select-menu button:hover,
+.select-menu button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.select-menu button:hover {
+  color: var(--ink);
+}
+
+.select-menu button:hover::before {
+  transform: scaleX(1);
+}
+
 .select-menu button.active {
   color: var(--ink);
   background: var(--signal);
@@ -1291,8 +1359,20 @@
   color: var(--item-color);
   background: color-mix(in srgb, var(--item-color) 72%, #171717 28%);
   box-shadow:
-    inset -7px -7px 0 rgba(0, 0, 0, 0.24),
-    inset 5px 5px 0 rgba(255, 255, 255, 0.22);
+    inset -6px -6px 0 rgba(0, 0, 0, 0.24),
+    inset 6px 6px 0 rgba(255, 255, 255, 0.22);
+}
+
+.item-icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  transform: translate(-1px, -1px);
+}
+
+.pixel-item svg {
+  transform: translate(-1px, -1px);
 }
 
 .minecraft-tooltip {

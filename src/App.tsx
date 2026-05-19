@@ -56,6 +56,10 @@ import {
   type TextStyle,
   terratierAttributeOptions,
   type TerratierAttributeEntry,
+  soundOptions,
+  trimPatternOptions,
+  trimMaterialOptions,
+  potionEffectOptions,
 } from "./lib/craftEngine";
 import "./App.css";
 
@@ -186,8 +190,8 @@ const sanitizeFileName = (value: string) =>
 const formatItemKey = (state: ItemState) =>
   `${state.namespace || "lowclicker"}:${state.itemId || "custom_item"}`;
 
-const itemIconUrl = (material: string) =>
-  `https://assets.mcasset.cloud/snapshot/assets/minecraft/textures/item/${material || "paper"}.png`;
+const itemIconUrl = (material: string, type: "item" | "block" = "item") =>
+  `https://assets.mcasset.cloud/snapshot/assets/minecraft/textures/${type}/${material || "paper"}.png`;
 
 function App() {
   const [state, setState] = useState<ItemState>(() => {
@@ -1092,6 +1096,54 @@ function AdvancedSection({ state, patchState }: ViewProps) {
             />
           </div>
 
+          {state.projectileEnabled && (
+            <div className="compact-grid">
+              <Field label="Projectile item">
+                <Select
+                  value={state.projectileItem}
+                  options={["", ...materialOptions]}
+                  onChange={(projectileItem) => patchState({ projectileItem })}
+                />
+              </Field>
+              <Field label="Projectile scale">
+                <NumberInput
+                  value={state.projectileScale}
+                  step={0.1}
+                  min={0.1}
+                  max={5}
+                  onChange={(projectileScale) => patchState({ projectileScale })}
+                />
+              </Field>
+              <Field label="Throw sound">
+                <Select
+                  value={state.projectileThrowSound}
+                  options={["", ...soundOptions]}
+                  onChange={(projectileThrowSound) =>
+                    patchState({ projectileThrowSound })
+                  }
+                />
+              </Field>
+              <Field label="Hit entity sound">
+                <Select
+                  value={state.projectileHitEntitySound}
+                  options={["", ...soundOptions]}
+                  onChange={(projectileHitEntitySound) =>
+                    patchState({ projectileHitEntitySound })
+                  }
+                />
+              </Field>
+              <Field label="Hit block sound">
+                <Select
+                  value={state.projectileHitBlockSound}
+                  options={["", ...soundOptions]}
+                  onChange={(projectileHitBlockSound) =>
+                    patchState({ projectileHitBlockSound })
+                  }
+                />
+              </Field>
+            </div>
+          )}
+
           <Field label="Invulnerable to">
             <ChipPicker
               values={state.invulnerable}
@@ -1166,14 +1218,16 @@ function AdvancedSection({ state, patchState }: ViewProps) {
           {state.trimEnabled && (
             <div className="compact-grid">
               <Field label="Trim pattern">
-                <TextInput
+                <Select
                   value={state.trimPattern}
+                  options={trimPatternOptions}
                   onChange={(trimPattern) => patchState({ trimPattern })}
                 />
               </Field>
               <Field label="Trim material">
-                <TextInput
+                <Select
                   value={state.trimMaterial}
+                  options={trimMaterialOptions}
                   onChange={(trimMaterial) => patchState({ trimMaterial })}
                 />
               </Field>
@@ -1211,6 +1265,50 @@ function AdvancedSection({ state, patchState }: ViewProps) {
             </div>
           )}
         </AdvancedDisclosure>
+
+        <AdvancedGroup title="Behavior">
+          <Field label="Behavior type">
+            <Select
+              value={state.behaviorType}
+              options={[
+                "none",
+                "block_item",
+                "furniture_item",
+                "ground_block_item",
+                "wall_block_item",
+                "ceiling_block_item",
+                "range_mining_item",
+                "compostable_item",
+              ]}
+              onChange={(behaviorType) =>
+                patchState({ behaviorType: behaviorType as any })
+              }
+            />
+          </Field>
+          {state.behaviorType !== "none" && (
+            <div className="compact-grid">
+              <Field label="Target block">
+                <Select
+                  value={state.behaviorBlock}
+                  options={["", ...blockOptions]}
+                  onChange={(behaviorBlock) => patchState({ behaviorBlock })}
+                />
+              </Field>
+              {state.behaviorType === "range_mining_item" && (
+                <Field label="Mining radius">
+                  <NumberInput
+                    value={state.behaviorRadius}
+                    min={1}
+                    max={10}
+                    onChange={(behaviorRadius) =>
+                      patchState({ behaviorRadius })
+                    }
+                  />
+                </Field>
+              )}
+            </div>
+          )}
+        </AdvancedGroup>
 
         <AdvancedGroup title="Custom components">
           <button
@@ -1383,8 +1481,49 @@ function PreviewDock({
   const loreLines = state.lore.filter((line) => line.text.trim().length > 0);
   const showEnchantments = !state.hideTooltip.includes("enchantments");
   const showAttributes = !state.hideTooltip.includes("attribute_modifiers");
-  const [failedIcon, setFailedIcon] = useState("");
-  const iconFailed = failedIcon === state.material;
+  
+  const variations = useMemo(() => {
+    const base = state.material;
+    const v: Array<{ name: string; type: "item" | "block" }> = [
+      { name: base, type: "item" },
+      { name: base, type: "block" },
+    ];
+
+    const suffixes = ["_top", "_front", "_side", "_bottom", "_outside"];
+    suffixes.forEach(s => v.push({ name: `${base}${s}`, type: "block" }));
+
+    const stripRegex = /_(stairs|slab|fence|button|wall|fence_gate|pressure_plate|gate|door|trapdoor|sign|hanging_sign)$/;
+    if (stripRegex.test(base)) {
+      const stripped = base.replace(stripRegex, "");
+      const fallbacks = [stripped, `${stripped}_planks`, `${stripped}_block` , `${stripped}_top`];
+      fallbacks.forEach(f => {
+        v.push({ name: f, type: "item" });
+        v.push({ name: f, type: "block" });
+      });
+    }
+
+    return v;
+  }, [state.material]);
+
+  const [attemptIndex, setAttemptIndex] = useState(0);
+  const [failed, setFailed] = useState(false);
+  
+  // Reset when material changes
+  useEffect(() => {
+    setAttemptIndex(0);
+    setFailed(false);
+  }, [state.material]);
+
+  const handleIconError = () => {
+    if (attemptIndex + 1 < variations.length) {
+      setAttemptIndex(attemptIndex + 1);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  const currentVariant = variations[attemptIndex];
+  const currentIconUrl = itemIconUrl(currentVariant?.name || state.material, currentVariant?.type || "item");
 
   return (
     <>
@@ -1403,15 +1542,15 @@ function PreviewDock({
               className="pixel-item"
               style={{ "--item-color": state.nameStyle.color } as CSSProperties}
             >
-              {!iconFailed && (
+              {!failed && (
                 <img
                   className="item-icon"
-                  src={itemIconUrl(state.material)}
+                  src={currentIconUrl}
                   alt=""
-                  onError={() => setFailedIcon(state.material)}
+                  onError={handleIconError}
                 />
               )}
-              {iconFailed && <Gem size={33} />}
+              {failed && <Gem size={32} />}
             </div>
           </div>
         </div>
@@ -1752,16 +1891,33 @@ function Select({
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({
     visibility: "hidden",
   });
   const selectId = useId();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const selected = value || "none";
 
+  const filteredOptions = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    let filtered = options;
+    if (lowerSearch) {
+      filtered = options.filter((opt) => opt.toLowerCase().includes(lowerSearch));
+    }
+    return filtered;
+  }, [options, search, value]);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSearch("");
+      return;
+    }
+
+    // Focus search input when menu opens
+    setTimeout(() => searchInputRef.current?.focus(), 10);
 
     const positionMenu = () => {
       const trigger = containerRef.current;
@@ -1873,21 +2029,40 @@ function Select({
               event.stopPropagation();
             }}
           >
-            {options.map((option) => (
-              <button
-                key={option || "empty"}
-                type="button"
-                className={option === value ? "active" : ""}
-                role="option"
-                aria-selected={option === value}
-                onClick={() => {
-                  onChange(option);
-                  setOpen(false);
+            <div className="select-search-container">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="select-search-input"
+                placeholder="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setOpen(false);
+                  e.stopPropagation();
                 }}
-              >
-                {option || "none"}
-              </button>
-            ))}
+              />
+            </div>
+            {filteredOptions.length === 0 && (
+              <div className="select-no-results">No results</div>
+            )}
+            <div className="select-menu-items">
+              {filteredOptions.map((option) => (
+                <button
+                  key={option || "empty"}
+                  type="button"
+                  className={option === value ? "active" : ""}
+                  role="option"
+                  aria-selected={option === value}
+                  onClick={() => {
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                >
+                  {option || "none"}
+                </button>
+              ))}
+            </div>
           </div>,
           document.body,
         )}
